@@ -3,6 +3,7 @@ from ui_tp4 import *
 import sys
 from generadores.exponencial import *
 from generadores.uniforme import *
+from generadores.cliente import *
 
 
 class AppWin(QMainWindow, Ui_MainWindow):
@@ -25,9 +26,13 @@ class AppWin(QMainWindow, Ui_MainWindow):
             tipo = "venta anticipada"
         return tipo
 
-    def generarProxLlegadaCritica(self, reloj, media):
+    def generarExpNeg(self, reloj, media):
         rnd, exp = exponencial2(media)
         return rnd, exp, reloj+exp
+
+    def generarUniforme(self, reloj, minimo, maximo):
+        rnd, valor = uniforme2(minimo, maximo)
+        return rnd, valor, reloj+valor
 
     def ordenarPrimero(self, val):
         return val[0]
@@ -50,7 +55,7 @@ class AppWin(QMainWindow, Ui_MainWindow):
         llegadaPasajerosHModMaximo = int(self.lineEdit_9.text())
         llegadaPasajerosHCriticoExpNeg = int(self.lineEdit_10.text())
         finAtencionCercaniaVentanillaExpNeg = int(self.lineEdit_11.text())
-        finAtencionCercaniaMaqDisp = int(self.lineEdit_12.text())
+        finAtencionCercaniaMaqDispExpNeg = int(self.lineEdit_12.text())
         finAtencionVentaAnticipadaVentanillaExpNeg = int(
             self.lineEdit_13.text())
         finAtencionInterprovincialVentanillaExpNeg = int(
@@ -58,11 +63,18 @@ class AppWin(QMainWindow, Ui_MainWindow):
         finAtencionInterprovincialMaqDispExpNeg = int(self.lineEdit_15.text())
 
         indice = 0
-        clientes = []
+        clientes = [Cliente]
+        horaLlegadaCliente = 0
+        horaFinAtencionInmediataVentanilla1 = 0
+        horaFinAtencionInmediataVentanilla2 = 0
+        horaFinAtencionAnticipadaVentanilla1 = 0
+        horaFinAtencionAnticipadaVentanilla2 = 0
+        horaFinAtencionMaqDis = 0
+
         # Eventos
         evento = "inicio"
         relojActual = 0
-        #relojAnterior = 0
+        relojAnterior = 0
         horaDia = 0
         proxEventos = [(0, "")]
 
@@ -94,6 +106,7 @@ class AppWin(QMainWindow, Ui_MainWindow):
         acumuladorTiempoEsperaColaSalidaInmediata = 0
         acumuladorTiempoEsperaColaVentaAnticipada = 0
         acumuladorTiempoEsperaColaMaquinaDispensadora = 0
+        acumuladorTiempoEsperaColaGeneral = 0
 
         # tiempoPromEsperaColas = self.lineEdit_16.setText()
         # cantidadMaxClientesColas = int(self.lineEdit_17.text())
@@ -102,34 +115,384 @@ class AppWin(QMainWindow, Ui_MainWindow):
 
         for i in range(cantSimulaciones):
 
+            for i in range(len(clientes)):
+
+                if (clientes[i].estado == "en cola"):
+                    espInicial = clientes[i].acumTiempoEsperaCola
+                    clientes[i].calcularTiempoEspera(clientes[i], relojActual)
+                    acumuladorTiempoEsperaColaGeneral += clientes[i].acumTiempoEsperaCola - espInicial
+                    if (clientes[i].tipo == "venta anticipada" and clientes[i].calcularTiempoEspera(clientes[i], relojActual) >= 20):
+                        contadorAbandonoVentaAnticipada += 1
+                        clientes.pop[i]
+
+            if (estadoMaquinaDispensadora == "libre"):
+                acumuladorTiempoLibreMaquinaDispensadora += relojActual - relojAnterior
+
             if (evento == "inicio"):
                 horaDia = horaInicioTraficoCritico * 60
-                rndHora, exp, hora = self.generarProxLlegadaCritica(
+                rndHora, exp, horaLlegadaCliente = self.generarExpNeg(
                     relojActual, llegadaPasajerosHCriticoExpNeg)
-                proxEventos.append((hora, "llegada cliente"))
+                proxEventos.append((horaLlegadaCliente, "llegada cliente"))
                 if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
-                    self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndHora, exp, hora, "", "", "", "", "", "", "", "", "", "", "", "", "", str(len(colaSalidaInmediata)), estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, str(len(colaVentaAnticipada)), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                    self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndHora, exp, horaLlegadaCliente, "", "", "", "", "", "", "", "", "", "", "", "", "", str(len(colaSalidaInmediata)), estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, str(len(colaVentaAnticipada)), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
                                 str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
-                hora, evento = self.determinarProximoEvento(proxEventos)
+
+                # cambia los datos para la siguiente iteracion
+                relojActual, evento = self.determinarProximoEvento(proxEventos)
+
             elif (evento == "llegada cliente"):
+
                 rndTipoCliente = random.random()
                 tipoCliente = self.tipoCliente(rndTipoCliente)
+                cli = Cliente(tipoCliente, "", relojActual, 0)
+                horaDia += relojActual - relojAnterior
+                if (tipoCliente == "ventanilla salida inmediata cercania"):
+                    if (estadoVentanillaSalidaInmediata1 == "libre"):
+                        cli.estado = "siendo atendido ventanilla inmediata 1"
 
-                # horaDia = horaDia + relojActual - relojAnterior
-                pass
-            elif (evento == "fin atencion cercania en ventanilla"):
-                pass
-            elif (evento == "fin atencion cercania en maquina dispensadora"):
-                pass
-            elif (evento == "fin atencion interprovincial en ventanilla"):
-                pass
-            elif (evento == "fin atencion interprovincial en maquina dispensadora"):
-                pass
+                        estadoVentanillaSalidaInmediata1 = "cercania"
+                        rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
+                            relojActual, finAtencionCercaniaVentanillaExpNeg)
+                        proxEventos.append(
+                            (horaFinAtencionInmediataVentanilla1, "fin atencion inmediata en ventanilla"))
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, rndHora, exp1, horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                    elif (estadoVentanillaSalidaInmediata2 == "libre"):
+                        cli.estado = "siendo atendido ventanilla inmediata 2"
+                        estadoVentanillaSalidaInmediata2 == "cercania"
+                        rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
+                            relojActual, finAtencionCercaniaVentanillaExpNeg)
+                        proxEventos.append(
+                            (horaFinAtencionInmediataVentanilla2, "fin atencion inmediata en ventanilla"))
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, rndHora, exp1, horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                    else:
+                        cli.estado = "en cola"
+                        colaSalidaInmediata.append(cli)
+                        if (contadorColaSalidaInmediata < len(colaSalidaInmediata)):
+                            contadorColaSalidaInmediata = len(
+                                colaSalidaInmediata)
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                elif (tipoCliente == "venta anticipada"):
+                    contadorTotalVentaAnticipada += 1
+                    if (estadoVentanillaVentaAnticipada1 == "libre"):
+                        cli.estado == "siendo atendido ventanilla anticipada 1"
+                        estadoVentanillaVentaAnticipada1 = "ocupado"
+                        rndHora, exp1, horaFinAtencionAnticipadaVentanilla1 = self.generarExpNeg(
+                            relojActual, finAtencionVentaAnticipadaVentanillaExpNeg)
+                        proxEventos.append(
+                            (horaFinAtencionAnticipadaVentanilla1, "fin atencion venta anticipada"))
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, rndHora, exp1, horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                    elif (estadoVentanillaVentaAnticipada2 == "libre"):
+                        cli.estado == "siendo atendido ventanilla anticipada 2"
+                        estadoVentanillaVentaAnticipada2 = "ocupado"
+                        rndHora, exp1, horaFinAtencionAnticipadaVentanilla2 = self.generarExpNeg(
+                            relojActual, finAtencionVentaAnticipadaVentanillaExpNeg)
+                        proxEventos.append(
+                            (horaFinAtencionAnticipadaVentanilla2, "fin atencion venta anticipada"))
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, rndHora, exp1, horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                    else:
+                        cli.estado = "en cola"
+                        colaVentaAnticipada.append(cli)
+                        if (contadorColaVentaAnticipada < len(colaVentaAnticipada)):
+                            contadorColaVentaAnticipada = len(
+                                colaVentaAnticipada)
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                elif (tipoCliente == "maquina expendedora salida inmediata cercania" or tipoCliente == "maquina expendedora salida inmediata interprovinci…"):
+                    if (estadoMaquinaDispensadora == "libre"):
+                        cli.estado = "siendo atendido maquina dispensadora"
+                        estadoMaquinaDispensadora = "ocupado"
+                        rndHora, exp1, horaFinAtencionMaqDis = self.generarExpNeg(
+                            relojActual, finAtencionInterprovincialMaqDispExpNeg)
+                        proxEventos.append(
+                            (horaFinAtencionMaqDis, "fin atencion inmediata en maquina dispensadora"))
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        rndHora, exp1, horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                    else:
+                        cli.estado = "en cola"
+                        colaMaquinaDispensadora.append(cli)
+                        if (contadorColaMaqDisp < len(colaMaquinaDispensadora)):
+                            contadorColaMaqDisp = len(colaMaquinaDispensadora)
+
+                        if (horaDia <= horaFinTraficoCritico * 60):
+                            rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                                relojActual, llegadaPasajerosHCriticoExpNeg)
+                        else:
+                            rndLlegada, exp, horaLlegadaCliente = self.generarUniforme(
+                                relojActual, llegadaPasajerosHModMinimo, llegadaPasajerosHModMaximo)
+
+                        proxEventos.append(
+                            (horaLlegadaCliente, "llegada cliente"))
+                        clientes.append(cli)
+                        contadorTotalClientes += 1
+
+                        if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                            self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+            elif (evento == "fin atencion inmediata en ventanilla"):
+
+                for i in range(len(clientes)):
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        if (clientes[i].estado == "siendo atendido ventanilla 1"):
+                            clientes.pop(i)
+                    else:
+                        if (clientes[i].estado == "siendo atendido ventanilla 2"):
+                            clientes.pop(i)
+
+                if (len(colaSalidaInmediata) == 0):
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        estadoVentanillaSalidaInmediata1 = "libre"
+                        horaFinAtencionAnticipadaVentanilla1 = ""
+                    else:
+                        estadoVentanillaSalidaInmediata2 = "libre"
+                        horaFinAtencionAnticipadaVentanilla2 = ""
+
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                else:
+
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        colaSalidaInmediata[0].estado = "siendo atendido ventanilla 1"
+                        if (colaSalidaInmediata[0].tipo == "ventanilla salida inmediata cercania"):
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
+                                relojActual, finAtencionCercaniaVentanillaExpNeg)
+
+                        else:
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
+                                relojActual, finAtencionInterprovincialVentanillaExpNeg)
+                    else:
+                        colaSalidaInmediata[0].estado = "siendo atendido ventanilla 2"
+                        if (colaSalidaInmediata[0].tipo == "ventanilla salida inmediata cercania"):
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
+                                relojActual, finAtencionCercaniaVentanillaExpNeg)
+                        else:
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
+                                relojActual, finAtencionInterprovincialVentanillaExpNeg)
+
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", rndHora, exp1, horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+                    colaSalidaInmediata.pop(0)
+
+            elif (evento == "fin atencion inmediata en maquina dispensadora"):
+                for i in range(len(clientes)):
+                    if (clientes[i].estado == "siendo atendido maquina dispensadora"):
+                        clientes.pop(i)
+
+                if (len(colaMaquinaDispensadora) == 0):
+                    estadoMaquinaDispensadora = "libre"
+                    horaFinAtencionMaqDis = ""
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                else:
+                    colaMaquinaDispensadora[0].estado = "siendo atendido maquina dispensadora"
+                    if (colaMaquinaDispensadora[0].tipo == "maquina expendedora salida inmediata cercania"):
+                        rndHora, exp1, horaFinAtencionMaqDis = self.generarExpNeg(
+                            relojActual, finAtencionCercaniaMaqDispExpNeg)
+                    else:
+                        rndHora, exp1, horaFinAtencionMaqDis = self.generarExpNeg(
+                            relojActual, finAtencionInterprovincialMaqDispExpNeg)
+
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    rndHora, exp1, horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
             elif (evento == "fin atencion venta anticipada"):
+
                 pass
             elif (evento == "fin simulacion"):
                 pass
+            elif (evento == "fin dia"):
+                colaMaquinaDispensadora.clear()
+                colaSalidaInmediata.clear()
+                colaVentaAnticipada.clear()
+                for i in range(len(clientes)):
+                    if (clientes[i].estado == "en cola"):
+                        clientes.pop(i)
 
+                for i in range(len(proxEventos)):
+                    if (proxEventos[i[1]] == "llegada cliente"):
+                        proxEventos.pop(i)
+                horaLlegadaCliente = ""
+                relojUltimo, a = proxEventos[-1]
+                proxEventos.append((relojUltimo + 1, "inicio dia"))
+                if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                    self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", "", "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                    colaSalidaInmediata),
+                                estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                    len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+            elif (evento == "inicio dia"):
+                horaDia == horaInicioTraficoCritico * 60
+                rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
+                    relojActual, llegadaPasajerosHCriticoExpNeg)
+                proxEventos.append(horaLlegadaCliente, "llegada cliente")
+
+            if (horaDia > horaFinTraficoModerado * 60):
+                evento = "fin dia"
+
+            relojAnterior = relojActual
+            relojActual, evento = self.determinarProximoEvento(proxEventos)
             indice += 1
 
     def abandonoCola(colaVentaAnticipada, ):

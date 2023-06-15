@@ -63,7 +63,7 @@ class AppWin(QMainWindow, Ui_MainWindow):
         finAtencionInterprovincialMaqDispExpNeg = int(self.lineEdit_15.text())
 
         indice = 0
-        clientes = [Cliente]
+        clientes = []
         horaLlegadaCliente = 0
         horaFinAtencionInmediataVentanilla1 = 0
         horaFinAtencionInmediataVentanilla2 = 0
@@ -108,22 +108,18 @@ class AppWin(QMainWindow, Ui_MainWindow):
         acumuladorTiempoEsperaColaMaquinaDispensadora = 0
         acumuladorTiempoEsperaColaGeneral = 0
 
-        # tiempoPromEsperaColas = self.lineEdit_16.setText()
-        # cantidadMaxClientesColas = int(self.lineEdit_17.text())
-        # porcAbandonoColaVentaAnticipada = int(self.lineEdit_18.text())
-        # porcTiempoLibreMaqDisp = int(self.lineEdit_19.text())
-
         for i in range(cantSimulaciones):
+            
+            if (len(clientes) != 0):
+                for i in range(len(clientes)):
 
-            for i in range(len(clientes)):
-
-                if (clientes[i].estado == "en cola"):
-                    espInicial = clientes[i].acumTiempoEsperaCola
-                    clientes[i].calcularTiempoEspera(clientes[i], relojActual)
-                    acumuladorTiempoEsperaColaGeneral += clientes[i].acumTiempoEsperaCola - espInicial
-                    if (clientes[i].tipo == "venta anticipada" and clientes[i].calcularTiempoEspera(clientes[i], relojActual) >= 20):
-                        contadorAbandonoVentaAnticipada += 1
-                        clientes.pop[i]
+                    if (clientes[i].estado == "en cola"):
+                        espInicial = clientes[i].acumTiempoEsperaCola
+                        clientes[i].calcularTiempoEspera(clientes[i], relojActual)
+                        acumuladorTiempoEsperaColaGeneral += clientes[i].acumTiempoEsperaCola - espInicial
+                        if (clientes[i].tipo == "venta anticipada" and clientes[i].calcularTiempoEspera(clientes[i], relojActual) >= 20):
+                            contadorAbandonoVentaAnticipada += 1
+                            clientes.pop[i]
 
             if (estadoMaquinaDispensadora == "libre"):
                 acumuladorTiempoLibreMaquinaDispensadora += relojActual - relojAnterior
@@ -146,15 +142,24 @@ class AppWin(QMainWindow, Ui_MainWindow):
                 tipoCliente = self.tipoCliente(rndTipoCliente)
                 cli = Cliente(tipoCliente, "", relojActual, 0)
                 horaDia += relojActual - relojAnterior
-                if (tipoCliente == "ventanilla salida inmediata cercania"):
+                if (tipoCliente == "ventanilla salida inmediata cercania" or tipoCliente == "ventanilla salida inmediata interprovincial"):
                     if (estadoVentanillaSalidaInmediata1 == "libre"):
                         cli.estado = "siendo atendido ventanilla inmediata 1"
 
-                        estadoVentanillaSalidaInmediata1 = "cercania"
-                        rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
-                            relojActual, finAtencionCercaniaVentanillaExpNeg)
-                        proxEventos.append(
-                            (horaFinAtencionInmediataVentanilla1, "fin atencion inmediata en ventanilla"))
+                        if (tipoCliente == "ventanilla salida inmediata cercania"):
+
+                            estadoVentanillaSalidaInmediata1 = "cercania"
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
+                                relojActual, finAtencionCercaniaVentanillaExpNeg)
+                            proxEventos.append(
+                                (horaFinAtencionInmediataVentanilla1, "fin atencion inmediata en ventanilla"))
+                        
+                        else:
+                            estadoVentanillaSalidaInmediata1 = "interprovincial"
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
+                                relojActual, finAtencionInterprovincialVentanillaExpNeg)
+                            proxEventos.append(
+                                (horaFinAtencionInmediataVentanilla1, "fin atencion inmediata en ventanilla"))
 
                         if (horaDia <= horaFinTraficoCritico * 60):
                             rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
@@ -178,11 +183,20 @@ class AppWin(QMainWindow, Ui_MainWindow):
 
                     elif (estadoVentanillaSalidaInmediata2 == "libre"):
                         cli.estado = "siendo atendido ventanilla inmediata 2"
-                        estadoVentanillaSalidaInmediata2 == "cercania"
-                        rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
-                            relojActual, finAtencionCercaniaVentanillaExpNeg)
-                        proxEventos.append(
-                            (horaFinAtencionInmediataVentanilla2, "fin atencion inmediata en ventanilla"))
+
+                        if (tipoCliente == "ventanilla salida inmediata cercania"):
+                            estadoVentanillaSalidaInmediata2 == "cercania"
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
+                                relojActual, finAtencionCercaniaVentanillaExpNeg)
+                            proxEventos.append(
+                                (horaFinAtencionInmediataVentanilla2, "fin atencion inmediata en ventanilla"))
+
+                        else:
+                            estadoVentanillaSalidaInmediata2 == "interprovincial"
+                            rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
+                                relojActual, finAtencionInterprovincialVentanillaExpNeg)
+                            proxEventos.append(
+                                (horaFinAtencionInmediataVentanilla2, "fin atencion inmediata en ventanilla"))
 
                         if (horaDia <= horaFinTraficoCritico * 60):
                             rndLlegada, exp, horaLlegadaCliente = self.generarExpNeg(
@@ -368,22 +382,26 @@ class AppWin(QMainWindow, Ui_MainWindow):
                                         str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
 
             elif (evento == "fin atencion inmediata en ventanilla"):
-
+                
+                
                 for i in range(len(clientes)):
-                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
-                        if (clientes[i].estado == "siendo atendido ventanilla 1"):
-                            clientes.pop(i)
+                    if (horaFinAtencionInmediataVentanilla1 == relojActual):
+                        if (clientes[i].estado == "siendo atendido ventanilla inmediata 1"):
+                            indiceClienteABorrar = i
                     else:
-                        if (clientes[i].estado == "siendo atendido ventanilla 2"):
+                        if (clientes[i].estado == "siendo atendido ventanilla inmediata 2"):
                             clientes.pop(i)
+                            indiceClienteABorrar = i
+                
+                clientes.pop(indiceClienteABorrar)
 
                 if (len(colaSalidaInmediata) == 0):
-                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                    if (horaFinAtencionInmediataVentanilla1 == relojActual):
                         estadoVentanillaSalidaInmediata1 = "libre"
-                        horaFinAtencionAnticipadaVentanilla1 = ""
+                        horaFinAtencionInmediataVentanilla1 = ""
                     else:
                         estadoVentanillaSalidaInmediata2 = "libre"
-                        horaFinAtencionAnticipadaVentanilla2 = ""
+                        horaFinAtencionInmediataVentanilla2 = ""
 
                     if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
                         self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
@@ -394,24 +412,31 @@ class AppWin(QMainWindow, Ui_MainWindow):
                                     str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
 
                 else:
+                    cliente = colaSalidaInmediata.pop(0)
 
-                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
-                        colaSalidaInmediata[0].estado = "siendo atendido ventanilla 1"
-                        if (colaSalidaInmediata[0].tipo == "ventanilla salida inmediata cercania"):
+                    if (horaFinAtencionInmediataVentanilla1 == relojActual):
+                        cliente.estado = "siendo atendido ventanilla inmediata 1"
+                        if (cliente.tipo == "ventanilla salida inmediata cercania"):
                             rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
                                 relojActual, finAtencionCercaniaVentanillaExpNeg)
 
                         else:
                             rndHora, exp1, horaFinAtencionInmediataVentanilla1 = self.generarExpNeg(
                                 relojActual, finAtencionInterprovincialVentanillaExpNeg)
+                            
+                        proxEventos.append((horaFinAtencionInmediataVentanilla1, "fin atencion inmediata en ventanilla"))
                     else:
-                        colaSalidaInmediata[0].estado = "siendo atendido ventanilla 2"
-                        if (colaSalidaInmediata[0].tipo == "ventanilla salida inmediata cercania"):
+                        cliente.estado = "siendo atendido ventanilla inmediata 2"
+                        if (cliente.tipo == "ventanilla salida inmediata cercania"):
                             rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
                                 relojActual, finAtencionCercaniaVentanillaExpNeg)
                         else:
                             rndHora, exp1, horaFinAtencionInmediataVentanilla2 = self.generarExpNeg(
                                 relojActual, finAtencionInterprovincialVentanillaExpNeg)
+                            
+                        proxEventos.append((horaFinAtencionInmediataVentanilla2, "fin atencion inmediata en ventanilla"))
+                    
+                    
 
                     if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
                         self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", rndHora, exp1, horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
@@ -420,7 +445,8 @@ class AppWin(QMainWindow, Ui_MainWindow):
                                     estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
                                         len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
                                     str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
-                    colaSalidaInmediata.pop(0)
+                    
+                    
 
             elif (evento == "fin atencion inmediata en maquina dispensadora"):
                 for i in range(len(clientes)):
@@ -439,13 +465,17 @@ class AppWin(QMainWindow, Ui_MainWindow):
                                     str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
 
                 else:
-                    colaMaquinaDispensadora[0].estado = "siendo atendido maquina dispensadora"
-                    if (colaMaquinaDispensadora[0].tipo == "maquina expendedora salida inmediata cercania"):
+                    cliente = colaMaquinaDispensadora.pop(0)
+
+                    cliente.estado = "siendo atendido maquina dispensadora"
+                    if (cliente.tipo == "maquina expendedora salida inmediata cercania"):
                         rndHora, exp1, horaFinAtencionMaqDis = self.generarExpNeg(
                             relojActual, finAtencionCercaniaMaqDispExpNeg)
                     else:
                         rndHora, exp1, horaFinAtencionMaqDis = self.generarExpNeg(
                             relojActual, finAtencionInterprovincialMaqDispExpNeg)
+                        
+                    proxEventos.append((horaFinAtencionMaqDis, "fin atencion inmediata en maquina dispensadora"))
 
                     if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
                         self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
@@ -456,10 +486,57 @@ class AppWin(QMainWindow, Ui_MainWindow):
                                     str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
 
             elif (evento == "fin atencion venta anticipada"):
+                for i in range(len(clientes)):
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        if (clientes[i].estado == "siendo atendido ventanilla anticipada 1"):
+                            clientes.pop(i)
+                    else:
+                        if (clientes[i].estado == "siendo atendido ventanilla anticipada 2"):
+                            clientes.pop(i)
 
-                pass
-            elif (evento == "fin simulacion"):
-                pass
+                if (len(colaVentaAnticipada) == 0):
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        estadoVentanillaVentaAnticipada1 = "libre"
+                        horaFinAtencionAnticipadaVentanilla1 = ""
+                    else:
+                        estadoVentanillaVentaAnticipada2 = "libre"
+                        horaFinAtencionAnticipadaVentanilla2 = ""
+
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+                else:
+                    cliente = colaVentaAnticipada.pop(0)
+
+                    if (horaFinAtencionAnticipadaVentanilla1 == relojActual):
+                        cliente.estado = "siendo atendido ventanilla anticipada 1"
+                       
+                        rndHora, exp1, horaFinAtencionAnticipadaVentanilla1 = self.generarExpNeg(
+                            relojActual, finAtencionVentaAnticipadaVentanillaExpNeg)
+                        
+                        proxEventos.append((horaFinAtencionAnticipadaVentanilla1, "fin atencion venta anticipada"))
+
+                    else:
+                        cliente.estado = "siendo atendido ventanilla anticipada 2"
+                        
+                        rndHora, exp1, horaFinAtencionAnticipadaVentanilla2 = self.generarExpNeg(
+                            relojActual, finAtencionVentaAnticipadaVentanillaExpNeg)
+                        
+                        proxEventos.append((horaFinAtencionAnticipadaVentanilla2, "fin atencion venta anticipada"))
+
+                    if (lineasAMostrarDesde <= indice and indice <= lineasAMostrarDesde + lineasAMostrar):
+                        self.cargar(indice - lineasAMostrarDesde, evento, relojActual, horaDia, "", "", horaLlegadaCliente, "", "", "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                    "", "", horaFinAtencionMaqDis, rndHora, exp1, horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                        colaSalidaInmediata),
+                                    estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                        len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                    str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+                    
             elif (evento == "fin dia"):
                 colaMaquinaDispensadora.clear()
                 colaSalidaInmediata.clear()
@@ -494,6 +571,37 @@ class AppWin(QMainWindow, Ui_MainWindow):
             relojAnterior = relojActual
             relojActual, evento = self.determinarProximoEvento(proxEventos)
             indice += 1
+        
+
+
+        ##### FIN DE SIMULACION
+        self.cargar(lineasAMostrarDesde+lineasAMostrar , evento, relojActual, horaDia, rndLlegada, exp, horaLlegadaCliente, rndTipoCliente, tipoCliente, "", "", horaFinAtencionInmediataVentanilla1, horaFinAtencionInmediataVentanilla2,
+                                        "", "", horaFinAtencionMaqDis, "", "", horaFinAtencionAnticipadaVentanilla1, horaFinAtencionAnticipadaVentanilla2, len(
+                                            colaSalidaInmediata),
+                                        estadoVentanillaSalidaInmediata1, estadoVentanillaSalidaInmediata2, len(colaVentaAnticipada), estadoVentanillaVentaAnticipada1, estadoVentanillaVentaAnticipada2, str(
+                                            len(colaMaquinaDispensadora)), estadoMaquinaDispensadora, str(horaInicioTiempoLibreMaqDis),
+                                        str(contadorColaSalidaInmediata), str(contadorColaVentaAnticipada), str(contadorColaMaqDisp), str(contadorTotalClientes), str(contadorTotalVentaAnticipada), str(acumuladorTiempoLibreMaquinaDispensadora), str(acumuladorTiempoEsperaColaSalidaInmediata), str(acumuladorTiempoEsperaColaVentaAnticipada), str(acumuladorTiempoEsperaColaMaquinaDispensadora), clientes)
+
+
+        tiempoPromedioEsperaCola = acumuladorTiempoEsperaColaGeneral / contadorTotalClientes
+
+        cantMaxClientesColaInmediata = contadorColaSalidaInmediata #MODIFICAR LA UI, PONER LABEL Y LINEEDIT PARA CADA COLA
+        cantMaxClientesColaAnticipada = contadorColaVentaAnticipada 
+        cantMaxClientesColaMaqDisp = contadorColaMaqDisp 
+
+        porcentajeAbandonoVentaAnticipada = contadorAbandonoVentaAnticipada / contadorTotalVentaAnticipada * 100
+
+
+        porcentajeTiempoLibreMaquinaDispensadora = acumuladorTiempoLibreMaquinaDispensadora / relojActual * 100
+
+        self.lineEdit_16.setText(str(tiempoPromedioEsperaCola))
+        # tiempoPromEsperaColas = 
+        self.lineEdit_17.setText(str(cantMaxClientesColaInmediata))
+        self.lineEdit_18.setText(str(porcentajeAbandonoVentaAnticipada))
+        self.lineEdit_19.setText(str(porcentajeTiempoLibreMaquinaDispensadora))
+        # self.lineEdit_20.setText(str(cantMaxClientesColaAnticipada))
+        # self.lineEdit_21.setText(str(cantMaxClientesColaMaqDisp))
+
 
     def abandonoCola(colaVentaAnticipada, ):
         pass

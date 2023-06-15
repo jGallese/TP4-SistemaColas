@@ -361,8 +361,8 @@ class Ui_MainWindow(object):
             "MainWindow", "Fin Atención Cercania en Ventanilla"))
         self.label_35.setText(_translate(
             "MainWindow", "Llegada Pasajero H. Crítico"))
-        self.pushButton.setText(_translate("MainWindow", "Limpiar Datos"))
-        self.pushButton_2.setText(_translate("MainWindow", "Generar"))
+        self.pushButton.setText(_translate("MainWindow", "Generar"))
+        self.pushButton_2.setText(_translate("MainWindow", "Limpiar Datos"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(
             self.tab), _translate("MainWindow", "Tab 1"))
         self.label_32.setText(_translate(

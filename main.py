@@ -560,7 +560,8 @@ class AppWin(QMainWindow, Ui_MainWindow):
                         clientes.pop(i)
 
                 for i in range(len(proxEventos)):
-                    if (proxEventos[i[1]] == "llegada cliente"):
+                    a, b = proxEventos[i]
+                    if (b == "llegada cliente"):
                         proxEventos.pop(i)
                 horaLlegadaCliente = ""
                 relojUltimo, a = proxEventos[-1]

@@ -181,10 +181,11 @@ class Ui_MainWindow(object):
         self.label_35.setObjectName("label_35")
         self.pushButton = QtWidgets.QPushButton(self.tab)
         self.pushButton.setGeometry(QtCore.QRect(590, 780, 101, 26))
-        self.pushButton.setObjectName("boton_limpiarCampo")
+        self.pushButton.setObjectName("pushButton")
         self.pushButton_2 = QtWidgets.QPushButton(self.tab)
         self.pushButton_2.setGeometry(QtCore.QRect(730, 780, 101, 26))
-        self.pushButton_2.setObjectName("boton_generar")
+        self.pushButton_2.setObjectName("pushButton2")
+        self.pushButton.clicked.connect(self.simulacion)
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
@@ -455,6 +456,9 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Acum.  Tpo.  Espera Cola M.D"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(
             self.tab_2), _translate("MainWindow", "Tab 2"))
+
+    def simulacion(self):
+        pass
 
 
 if __name__ == "__main__":

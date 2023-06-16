@@ -43,7 +43,39 @@ class AppWin(QMainWindow, Ui_MainWindow):
         proxEventos.pop(0)
         return hora, tipo
 
+    def limpiarCampos(self):
+
+        self.lineEdit.setText("")
+        self.lineEdit_2.setText("")
+        
+        self.lineEdit_7.setText("")
+        
+        self.lineEdit_16.setText("")
+        self.lineEdit_19.setText("")
+        self.lineEdit_18.setText("")
+        # tiempoPromEsperaColas =
+
+        self.lineEdit_20.setText("")
+        self.lineEdit_21.setText("")
+        self.lineEdit_22.setText("")
+
+        self.lineEdit_3.setText("15")
+        self.lineEdit_4.setText("24")
+        self.lineEdit_5.setText("15")
+        self.lineEdit_6.setText("6")
+        self.lineEdit_8.setText("0.38")
+        self.lineEdit_9.setText("1.76")
+        self.lineEdit_10.setText("0.6")
+        self.lineEdit_11.setText("0.75")
+        self.lineEdit_12.setText("2")
+        self.lineEdit_13.setText("2.4")
+        self.lineEdit_14.setText("1.5")
+        self.lineEdit_15.setText("2")
+        self.tableWidget.setRowCount(0)
+
     def simulacion(self):
+
+    
         cantSimulaciones = int(self.lineEdit.text())
         lineasAMostrar = int(self.lineEdit_2.text())
         lineasAMostrarDesde = int(self.lineEdit_7.text())
@@ -662,8 +694,8 @@ class AppWin(QMainWindow, Ui_MainWindow):
         self.lineEdit_21.setText(str(cantMaxClientesColaAnticipada))
         self.lineEdit_22.setText(str(cantMaxClientesColaMaqDisp))
 
-    def abandonoCola(colaVentaAnticipada, ):
-        pass
+    
+        
 
     def cargar(self, indice, iteracion, evento, reloj, horaDia, rndLlegada, tiempoLlegada, horaLlegadaProxPasajero, rndTipoCliente, tipoCliente, rndFinAtencionInmediataEnVentanilla, tiempoFinAtencionInmediataVent, finAtencionInmediataVent1, finAtencionInmediataVent2, RNDFinAtencionInmediataMaqDis, tiempoFinAtencionInmediataMaqDis,
                finAtencionInmediataMaqDis, rndFinAtencionVentaAnticipadaVentanilla, tiempoFinAtencionVentaAnticipadaVentanilla, finAtencionVentaAnticipadaVentanilla1, finAtencionVentaAnticipadaVentanilla2,

@@ -173,6 +173,7 @@ class Ui_MainWindow(object):
         self.pushButton = QtWidgets.QPushButton(self.tab)
         self.pushButton.setGeometry(QtCore.QRect(740, 780, 111, 26))
         self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.limpiarCampos)
         self.pushButton_2 = QtWidgets.QPushButton(self.tab)
         self.pushButton_2.clicked.connect(self.simulacion)
         self.pushButton_2.setGeometry(QtCore.QRect(600, 780, 101, 26))
@@ -537,7 +538,23 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(
             self.tab_2), _translate("MainWindow", "Tab 2"))
 
+        self.lineEdit_3.setText("15")
+        self.lineEdit_4.setText("24")
+        self.lineEdit_5.setText("15")
+        self.lineEdit_6.setText("6")
+        self.lineEdit_8.setText("0.38")
+        self.lineEdit_9.setText("1.76")
+        self.lineEdit_10.setText("0.6")
+        self.lineEdit_11.setText("0.75")
+        self.lineEdit_12.setText("2")
+        self.lineEdit_13.setText("2.4")
+        self.lineEdit_14.setText("1.5")
+        self.lineEdit_15.setText("2")
+
     def simulacion(self):
+        pass
+
+    def limpiarCampos(self):
         pass
 
 

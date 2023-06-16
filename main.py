@@ -115,17 +115,28 @@ class AppWin(QMainWindow, Ui_MainWindow):
         for j in range(cantSimulaciones):
 
             if (len(clientes) != 0):
+                listaAuxCli = []
+                listaAuxCola = []
                 for i in range(len(clientes)):
-
+                
                     if (clientes[i].estado == "en cola"):
                         espInicial = clientes[i].acumTiempoEsperaCola
                         clientes[i].calcularTiempoEspera(
                             relojActual)
                         acumuladorTiempoEsperaColaGeneral += clientes[i].acumTiempoEsperaCola - espInicial
-                        if (clientes[i].tipo == "venta anticipada" and clientes[i].acumTiempoEsperaCola >= 20):
+                        if (clientes[i].tipo != "venta anticipada" or clientes[i].acumTiempoEsperaCola < 20):
+                            listaAuxCli.append(clientes[i])
+                        else:
                             contadorAbandonoVentaAnticipada += 1
-                            clientes.pop[i]
+                    else:
+                        listaAuxCli.append(clientes[i])
+                clientes = listaAuxCli 
 
+                for i in range(len(colaVentaAnticipada)):
+                    if colaVentaAnticipada[i].acumTiempoEsperaCola < 20:
+                        listaAuxCola.append(colaVentaAnticipada[i])
+                colaVentaAnticipada = listaAuxCola
+                   
             if (estadoMaquinaDispensadora == "libre"):
                 acumuladorTiempoLibreMaquinaDispensadora += relojActual - relojAnterior
 
